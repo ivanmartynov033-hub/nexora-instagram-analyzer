@@ -88,6 +88,50 @@ function importJSON(e){let f=e.target.files[0];if(!f)return;let r=new FileReader
 function importCSV(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let lines=r.result.split(/\r?\n/).filter(Boolean),heads=lines.shift().split(',').map(x=>x.trim());let count=0;lines.forEach(line=>{let v=line.split(',').map(x=>x.trim()),o={};heads.forEach((h,i)=>o[h]=v[i]||'');let a={id:String(Date.now()+count),name:o.name||o.username||'Аккаунт',username:(o.username||'').replace(/^@/,''),followers:+o.followers||0,following:+o.following||0,posts:+o.posts||0,likes:+o.likes||0,comments:+o.comments||0,views:+o.views||0,reach:+o.reach||0,saves:+o.saves||0,shares:+o.shares||0,category:o.category||'',notes:'Импорт CSV'};db.accounts.push(a);db.history.push({id:a.id,date:new Date().toISOString(),followers:a.followers});count++});save();alert('Импортировано аккаунтов: '+count)};r.readAsText(f)}
 function set(id,v){let e=document.getElementById(id);if(e)e.textContent=v}function setHTML(id,v){let e=document.getElementById(id);if(e)e.innerHTML=v}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+const API_BASE = "https://nexora-instagram-analyzer.onrender.com";
+
+function addPublicAnalyzer() {
+  const section = document.getElementById("overview");
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = `
+    <h2>Автоматический анализ Instagram</h2>
+    <input id="publicUsername" placeholder="@username">
+    <button class="btn primary" onclick="analyzePublicAccount()">
+      Анализировать аккаунт
+    </button>
+    <div id="publicResult" class="hint"></div>
+  `;
+  section.appendChild(card);
+}
+
+async function analyzePublicAccount() {
+  const username = document.getElementById("publicUsername").value
+    .trim().replace(/^@/, "");
+  const result = document.getElementById("publicResult");
+
+  if (!username) {
+    result.textContent = "Введите Instagram username";
+    return;
+  }
+
+  result.textContent = "Отправляем запрос на сервер...";
+
+  try {
+    const response = await fetch(API_BASE + "/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username })
+    });
+
+    const data = await response.json();
+    result.textContent = data.message || "Ответ получен";
+  } catch (error) {
+    result.textContent = "Ошибка соединения с сервером";
+  }
+}
+
+addPublicAnalyzer();
 renderAll();
 </script>
 </body></html>
