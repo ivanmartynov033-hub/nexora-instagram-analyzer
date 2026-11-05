@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="ru">
 <head>
@@ -6,132 +7,339 @@
 <meta name="theme-color" content="#070d18">
 <title>NEXORA — Instagram Analyzer</title>
 <style>
-:root{--bg:#070d18;--panel:#101b2d;--panel2:#14233a;--line:#263a57;--text:#eef5ff;--muted:#91a5c1;--blue:#55b9ff;--cyan:#53e0e5;--red:#ff7d89}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#102b49 0,transparent 34%),var(--bg);color:var(--text);font:15px system-ui,-apple-system,Segoe UI,sans-serif}
-header{padding:22px 18px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#080f1beF;backdrop-filter:blur(12px);z-index:3}
-.brand{font-size:22px;font-weight:800;letter-spacing:2px}.brand span{color:var(--cyan)}.sub{font-size:11px;color:var(--muted);letter-spacing:2px}
-nav{display:flex;gap:8px;overflow:auto;padding:12px 14px;position:sticky;top:82px;background:#080f1b;z-index:2}
-nav button,.btn{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:10px 13px;border-radius:11px;font-weight:650;white-space:nowrap}
-nav button.active,.btn.primary{background:linear-gradient(110deg,#087fc5,#145b9e);border-color:#258ac9}
-main{max-width:1100px;margin:auto;padding:8px 14px 50px}.page{display:none}.page.active{display:block}
-h1{font-size:25px;margin:18px 0 6px}h2{font-size:18px;margin:8px 0 14px}.muted,.hint{color:var(--muted)}.hint{font-size:12px;line-height:1.5}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:16px 0}
-.card{background:linear-gradient(145deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:16px;padding:15px;margin:12px 0}
-.kpi{font-size:25px;font-weight:800;margin-top:5px}.klabel{font-size:12px;color:var(--muted)}
+:root{--bg:#070d18;--panel:#101b2d;--panel2:#14233a;--line:#263a57;--text:#eef5ff;--muted:#91a5c1;--blue:#087cff;--cyan:#00cfe8;--red:#ff7d89}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 80% 0,#102b49 0,transparent 34%),var(--bg);color:var(--text);font:15px system-ui,-apple-system,sans-serif}
+header{padding:22px 18px 16px;border-bottom:1px solid var(--line);background:#080f1b}
+.brand{font-size:25px;font-weight:850;letter-spacing:3px}.brand span{color:var(--cyan)}
+.sub{font-size:11px;color:var(--muted);letter-spacing:3px;margin-top:4px}
+nav{display:flex;gap:8px;overflow:auto;padding:12px 14px;position:sticky;top:0;background:#080f1b;z-index:5}
+button{cursor:pointer;font:inherit}
+nav button,.btn{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:12px 15px;border-radius:12px;font-weight:650;white-space:nowrap}
+nav button.active,.btn.primary{background:linear-gradient(110deg,#087cff,#00aaca);border-color:#168bdc}
+main{max-width:1050px;margin:auto;padding:12px 14px 45px}
+.page{display:none}.page.active{display:block}
+h1{font-size:27px;margin:18px 0 10px}h2{font-size:19px;margin:5px 0 14px}
+.muted,.hint{color:var(--muted)}.hint{font-size:13px;line-height:1.55}
+.card{background:linear-gradient(145deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:19px;padding:18px;margin:13px 0}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}
+.kpi{font-size:25px;font-weight:800;margin-top:5px;overflow-wrap:anywhere}
+.klabel{font-size:12px;color:var(--muted)}
+input,select,textarea{width:100%;background:#091322;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:14px;margin:7px 0 12px;font:inherit}
+.btn{display:inline-block;margin:4px 4px 4px 0}.btn.danger{border-color:#7b3b4b;color:#ffc1c8}
+button:disabled{opacity:.55;cursor:wait}
 .row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.row>*{flex:1}
-input,select,textarea{width:100%;background:#091322;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:11px;margin:5px 0 12px;font:inherit}
-label{display:block;color:var(--muted);font-size:12px}button{cursor:pointer}.btn{display:inline-block;margin:4px 4px 4px 0}.btn.danger{border-color:#7b3b4b;color:#ffc1c8}
-table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:10px 7px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-weight:600}
-.tablewrap{overflow:auto}.pill{display:inline-block;border:1px solid var(--line);border-radius:20px;padding:3px 8px;color:var(--cyan);font-size:11px}
-.empty{padding:24px;text-align:center;color:var(--muted)}.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
-a{color:var(--blue)}footer{text-align:center;color:var(--muted);font-size:11px;padding:25px}
-@media(min-width:700px){header{padding-left:max(20px,calc((100vw - 1060px)/2))}nav{padding-left:max(14px,calc((100vw - 1080px)/2))}}
+.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:10px 7px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600}
+.empty{padding:20px;text-align:center;color:var(--muted)}
+.status{padding:12px;border-radius:12px;background:#0b2636;color:#bcecff;margin-top:12px;line-height:1.5}
+.status.error{background:#351b28;color:#ffc1c8}
+.pill{display:inline-block;border:1px solid var(--line);border-radius:20px;padding:4px 9px;color:var(--cyan);font-size:11px}
+.post{padding:13px 0;border-bottom:1px solid var(--line)}
+.post:last-child{border:0}
+a{color:#65c8ff}
+footer{text-align:center;color:var(--muted);font-size:11px;padding:25px}
+@media(min-width:650px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 </style>
 </head>
 <body>
-<header><div class="brand">NEX<span>ORA</span></div><div class="sub">DIGITAL AUTOMATION STUDIO</div></header>
+<header>
+<div class="brand">NEX<span>ORA</span></div>
+<div class="sub">DIGITAL AUTOMATION STUDIO</div>
+</header>
+
 <nav id="nav">
-<button class="active" data-page="overview">Обзор</button><button data-page="accounts">Аккаунты</button><button data-page="compare">Конкуренты</button><button data-page="posts">Публикации</button><button data-page="transfer">Импорт / экспорт</button>
+<button class="active" data-page="overview">Анализ</button>
+<button data-page="accounts">Аккаунты</button>
+<button data-page="compare">Конкуренты</button>
+<button data-page="posts">Публикации</button>
+<button data-page="transfer">Импорт / экспорт</button>
 </nav>
+
 <main>
 <section id="overview" class="page active">
-<h1>Instagram Analyzer</h1><div class="muted">Панель аналитики аккаунтов и конкурентов</div>
-<div class="grid">
-<div class="card"><div class="klabel">Аккаунты</div><div class="kpi" id="kAccounts">0</div></div>
-<div class="card"><div class="klabel">Подписчики всего</div><div class="kpi" id="kFollowers">0</div></div>
-<div class="card"><div class="klabel">Средний ER</div><div class="kpi" id="kEr">0%</div></div>
-<div class="card"><div class="klabel">Публикации</div><div class="kpi" id="kPosts">0</div></div>
+<div class="card">
+<h1>Автоматический анализ Instagram</h1>
+<p class="muted">Введите username или ссылку на публичный профиль. Сервис запросит доступные публичные показатели и последние публикации.</p>
+<input id="username" placeholder="@username или https://www.instagram.com/username/">
+<button class="btn primary" id="analyzeBtn" onclick="analyze()">Анализировать</button>
+<div id="message" hidden></div>
+<p class="hint">Анализ работает без пароля Instagram. Доступность данных зависит от ограничений Instagram: отдельные профили или запросы могут быть временно недоступны.</p>
 </div>
-<div class="card"><h2>Быстрый переход к профилю</h2><div class="row"><input id="quickUser" placeholder="@username"><button class="btn primary" onclick="openProfile()">Открыть Instagram</button></div><div class="hint">Открывает публичную страницу профиля. Само по себе это не загружает статистику.</div></div>
-<div class="card"><h2>Последние аккаунты</h2><div id="recent"></div></div>
-<div class="card"><h2>Как работает сбор данных</h2><p class="hint">Сейчас доступны ручное добавление и импорт CSV/JSON. Автоматическое получение закрытой статистики чужих аккаунтов невозможно. Для официальной автоматизации потребуется подключение Meta API, разрешения Meta и серверная часть. Не вводите пароль Instagram в эту программу.</p></div>
+
+<div id="result" hidden>
+<div class="card">
+<h2 id="profileName">Профиль</h2>
+<div class="muted" id="profileBio"></div>
+<p><a id="profileLink" target="_blank" rel="noopener">Открыть Instagram</a></p>
+<div class="grid">
+<div><div class="klabel">Подписчики</div><div class="kpi" id="rFollowers">0</div></div>
+<div><div class="klabel">Подписки</div><div class="kpi" id="rFollowing">0</div></div>
+<div><div class="klabel">Публикации</div><div class="kpi" id="rCount">0</div></div>
+<div><div class="klabel">Средний ER</div><div class="kpi" id="rEr">0%</div></div>
+<div><div class="klabel">Средние лайки</div><div class="kpi" id="rLikes">0</div></div>
+<div><div class="klabel">Средние комментарии</div><div class="kpi" id="rComments">0</div></div>
+<div><div class="klabel">Проверено публикаций</div><div class="kpi" id="rSample">0</div></div>
+<div><div class="klabel">Время анализа</div><div class="kpi" id="rTime">—</div></div>
+</div>
+<p class="hint" id="notice"></p>
+<button class="btn primary" onclick="saveCurrent()">Сохранить аккаунт</button>
+</div>
+<div class="card">
+<h2>Последние публикации</h2>
+<div id="recentPosts"></div>
+</div>
+</div>
+
+<div class="card">
+<h2>Сводка</h2>
+<div class="grid">
+<div><div class="klabel">Аккаунты в базе</div><div class="kpi" id="kAccounts">0</div></div>
+<div><div class="klabel">Подписчики всего</div><div class="kpi" id="kFollowers">0</div></div>
+<div><div class="klabel">Средний ER</div><div class="kpi" id="kEr">0%</div></div>
+<div><div class="klabel">Публикации в базе</div><div class="kpi" id="kPosts">0</div></div>
+</div>
+</div>
 </section>
+
 <section id="accounts" class="page">
-<h1>Аккаунты</h1><div class="row"><input id="searchAccount" placeholder="Поиск по имени..." oninput="renderAccounts()"><button class="btn primary" onclick="showForm()">+ Добавить аккаунт</button></div>
-<div id="accountForm" class="card" hidden><h2 id="formTitle">Новый аккаунт</h2><input type="hidden" id="editId">
-<div class="two"><div><label>Имя / название</label><input id="name" placeholder="Название аккаунта"></div><div><label>Instagram username</label><input id="username" placeholder="@username"></div>
-<div><label>Подписчики</label><input id="followers" type="number" min="0" value="0"></div><div><label>Подписки</label><input id="following" type="number" min="0" value="0"></div>
-<div><label>Публикации</label><input id="postCount" type="number" min="0" value="0"></div><div><label>Средние лайки</label><input id="likes" type="number" min="0" value="0"></div>
-<div><label>Средние комментарии</label><input id="comments" type="number" min="0" value="0"></div><div><label>Средние просмотры Reels</label><input id="views" type="number" min="0" value="0"></div>
-<div><label>Охват</label><input id="reach" type="number" min="0" value="0"></div><div><label>Сохранения</label><input id="saves" type="number" min="0" value="0"></div>
-<div><label>Репосты</label><input id="shares" type="number" min="0" value="0"></div><div><label>Категория / ниша</label><input id="category" placeholder="Например, ремонт"></div></div>
-<label>Заметки</label><textarea id="notes" rows="2"></textarea><button class="btn primary" onclick="saveAccount()">Сохранить</button><button class="btn" onclick="hideForm()">Отмена</button>
-<div class="hint">ER считается ориентировочно: (средние лайки + комментарии) / подписчики × 100.</div></div>
-<div class="card"><div class="tablewrap" id="accountsTable"></div></div>
+<h1>Аккаунты</h1>
+<input id="searchAccount" placeholder="Поиск по аккаунтам..." oninput="renderAccounts()">
+<div class="card"><div id="accountsTable"></div></div>
 </section>
-<section id="compare" class="page"><h1>Сравнение конкурентов</h1><div class="hint">Отметьте до пяти аккаунтов в разделе «Аккаунты», затем они появятся здесь.</div><div class="card" id="compareTable"></div><div class="card"><h2>Динамика подписчиков</h2><div id="history"></div></div></section>
-<section id="posts" class="page"><h1>Аналитика публикаций</h1><div class="card"><h2>Сводные показатели по аккаунтам</h2><div id="postStats"></div></div><div class="card"><h2>Добавить данные публикации</h2><label>Аккаунт</label><select id="postAccount"></select><div class="two"><div><label>Название / ссылка</label><input id="postTitle" placeholder="Reels: пример"></div><div><label>Дата</label><input id="postDate" type="date"></div><div><label>Лайки</label><input id="pLikes" type="number" value="0"></div><div><label>Комментарии</label><input id="pComments" type="number" value="0"></div><div><label>Просмотры</label><input id="pViews" type="number" value="0"></div><div><label>Сохранения</label><input id="pSaves" type="number" value="0"></div><div><label>Репосты</label><input id="pShares" type="number" value="0"></div><div><label>Охват</label><input id="pReach" type="number" value="0"></div></div><button class="btn primary" onclick="savePost()">Добавить публикацию</button></div><div class="card" id="postsTable"></div></section>
-<section id="transfer" class="page"><h1>Импорт и экспорт</h1><div class="card"><h2>Резервная копия</h2><button class="btn primary" onclick="exportJSON()">Скачать резервную копию JSON</button><label>Восстановить из JSON</label><input type="file" id="jsonFile" accept=".json,application/json" onchange="importJSON(event)"></div><div class="card"><h2>Импорт аккаунтов из CSV</h2><p class="hint">Колонки: name,username,followers,following,posts,likes,comments,views,reach,saves,shares,category. Первая строка — заголовки.</p><input type="file" id="csvFile" accept=".csv,text/csv" onchange="importCSV(event)"></div><div class="card"><h2>Где хранятся данные?</h2><p class="hint">Данные хранятся локально в браузере этого устройства. Очистка данных Safari может удалить их. Регулярно скачивайте резервную копию JSON. Для синхронизации между устройствами понадобится серверная база данных.</p></div></section>
-</main><footer>NEXORA Instagram Analyzer · MVP · Данные вводятся вручную или импортируются</footer>
+
+<section id="compare" class="page">
+<h1>Сравнение конкурентов</h1>
+<p class="hint">Сохраняйте публичные аккаунты через автоматический анализ. Они появятся в сравнении.</p>
+<div class="card"><div id="compareTable"></div></div>
+</section>
+
+<section id="posts" class="page">
+<h1>Публикации</h1>
+<div class="card"><div id="postsTable"></div></div>
+</section>
+
+<section id="transfer" class="page">
+<h1>Импорт и экспорт</h1>
+<div class="card">
+<h2>Резервная копия</h2>
+<button class="btn primary" onclick="exportJSON()">Экспорт JSON</button>
+<label>Восстановить из JSON</label>
+<input type="file" id="jsonFile" accept=".json,application/json" onchange="importJSON(event)">
+</div>
+<div class="card">
+<h2>Экспорт аккаунтов CSV</h2>
+<button class="btn primary" onclick="exportCSV()">Скачать CSV</button>
+</div>
+<div class="card">
+<p class="hint">Данные хранятся локально в браузере этого устройства. Регулярно сохраняйте резервную копию JSON. Очистка данных Safari может удалить локальную базу.</p>
+</div>
+</section>
+</main>
+<footer>NEXORA Instagram Analyzer · Digital Automation Studio</footer>
+
 <script>
-const KEY='nexora_ig_analyzer_v1';let db=load();
-function load(){try{return JSON.parse(localStorage.getItem(KEY))||{accounts:[],posts:[],history:[]}}catch(e){return{accounts:[],posts:[],history:[]}}}
-function save(){localStorage.setItem(KEY,JSON.stringify(db));renderAll()}
-function num(id){return Math.max(0,Number(document.getElementById(id).value)||0)}
+const API='https://nexora-instagram-analyzer.onrender.com';
+const KEY='nexora_ig_analyzer_v1';
+let db=load();
+let current=null;
+
+function load(){
+ try{
+  const d=JSON.parse(localStorage.getItem(KEY));
+  if(d&&Array.isArray(d.accounts)&&Array.isArray(d.posts))return d;
+ }catch(e){}
+ return {accounts:[],posts:[],history:[]};
+}
+function saveDB(){localStorage.setItem(KEY,JSON.stringify(db));renderAll()}
 function fmt(n){return Number(n||0).toLocaleString('ru-RU')}
-function er(a){return a.followers?((a.likes+a.comments)/a.followers*100):0}
-function nav(page){document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===page));document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===page));renderAll()}
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>nav(b.dataset.page));
-function openProfile(){let u=document.getElementById('quickUser').value.trim().replace(/^@/,'');if(u)window.open('https://www.instagram.com/'+encodeURIComponent(u)+'/','_blank')}
-function showForm(a){document.getElementById('accountForm').hidden=false;document.getElementById('formTitle').textContent=a?'Редактировать аккаунт':'Новый аккаунт';let fields=['id','name','username','followers','following','postCount','likes','comments','views','reach','saves','shares','category','notes'];let map={postCount:'posts'};fields.forEach(k=>{let el=document.getElementById(k==='id'?'editId':k);if(el)el.value=a?(a[map[k]||k]??''): (['followers','following','postCount','likes','comments','views','reach','saves','shares'].includes(k)?0:'')})}
-function hideForm(){document.getElementById('accountForm').hidden=true}
-function saveAccount(){let id=document.getElementById('editId').value;let a={id:id||String(Date.now()),name:document.getElementById('name').value.trim(),username:document.getElementById('username').value.trim().replace(/^@/,''),followers:num('followers'),following:num('following'),posts:num('postCount'),likes:num('likes'),comments:num('comments'),views:num('views'),reach:num('reach'),saves:num('saves'),shares:num('shares'),category:document.getElementById('category').value,notes:document.getElementById('notes').value,updated:new Date().toISOString()};if(!a.name&&!a.username){alert('Укажите имя или username');return}let i=db.accounts.findIndex(x=>x.id===a.id);if(i>=0)db.accounts[i]=a;else db.accounts.push(a);db.history.push({id:a.id,date:new Date().toISOString(),followers:a.followers});hideForm();save()}
-function renderAccounts(){let q=(document.getElementById('searchAccount')?.value||'').toLowerCase();let list=db.accounts.filter(a=>(a.name+' '+a.username+' '+a.category).toLowerCase().includes(q));let html=list.length?'<table><tr><th>Аккаунт</th><th>Подписчики</th><th>ER</th><th></th></tr>'+list.map(a=>`<tr><td><b>${esc(a.name||'@'+a.username)}</b><br><span class="hint">@${esc(a.username||'—')} · ${esc(a.category||'')}</span></td><td>${fmt(a.followers)}</td><td>${er(a).toFixed(2)}%</td><td><button class="btn" onclick="editAccount('${a.id}')">Изменить</button><button class="btn danger" onclick="delAccount('${a.id}')">Удалить</button></td></tr>`).join('')+'</table>':'<div class="empty">Пока нет аккаунтов. Нажмите «Добавить аккаунт».</div>';document.getElementById('accountsTable').innerHTML=html}
-function editAccount(id){let a=db.accounts.find(x=>x.id===id);if(a)showForm(a)}
-function delAccount(id){if(confirm('Удалить аккаунт и его публикации?')){db.accounts=db.accounts.filter(a=>a.id!==id);db.posts=db.posts.filter(p=>p.accountId!==id);save()}}
-function renderAll(){let total=db.accounts.reduce((s,a)=>s+a.followers,0),avg=db.accounts.length?db.accounts.reduce((s,a)=>s+er(a),0)/db.accounts.length:0;set('kAccounts',db.accounts.length);set('kFollowers',fmt(total));set('kEr',avg.toFixed(2)+'%');set('kPosts',fmt(db.accounts.reduce((s,a)=>s+a.posts,0)));let recent=db.accounts.slice(-5).reverse();setHTML('recent',recent.length?recent.map(a=>`<p><b>${esc(a.name||a.username)}</b> — ${fmt(a.followers)} подписчиков · ER ${er(a).toFixed(2)}%</p>`).join(''):'<div class="empty">Добавьте первый аккаунт в разделе «Аккаунты».</div>');if(document.getElementById('accountsTable'))renderAccounts();renderCompare();renderPosts()}
-function renderCompare(){let arr=db.accounts.slice(0,5);setHTML('compareTable',arr.length?'<div class="tablewrap"><table><tr><th>Метрика</th>'+arr.map(a=>'<th>'+esc(a.name||a.username)+'</th>').join('')+'</tr>'+[['Подписчики','followers'],['Подписки','following'],['Публикации','posts'],['Средние лайки','likes'],['Комментарии','comments'],['Просмотры','views'],['Охват','reach'],['Сохранения','saves'],['Репосты','shares']].map(([l,k])=>'<tr><td>'+l+'</td>'+arr.map(a=>'<td>'+fmt(a[k])+'</td>').join('')+'</tr>').join('')+'<tr><td>ER</td>'+arr.map(a=>'<td>'+er(a).toFixed(2)+'%</td>').join('')+'</tr></table></div>':'<div class="empty">Сначала добавьте аккаунты.</div>');let h=db.history.slice(-30);setHTML('history',h.length?h.map(x=>{let a=db.accounts.find(a=>a.id===x.id);return `<p>${esc(a?.name||a?.username||'Аккаунт')} · ${new Date(x.date).toLocaleDateString('ru-RU')} · ${fmt(x.followers)} подписчиков</p>`}).join(''):'<div class="empty">История появится после сохранения новых снимков аккаунтов.</div>')}
-function savePost(){let id=document.getElementById('postAccount').value;if(!id){alert('Сначала добавьте аккаунт');return}db.posts.push({id:String(Date.now()),accountId:id,title:document.getElementById('postTitle').value,date:document.getElementById('postDate').value,likes:num('pLikes'),comments:num('pComments'),views:num('pViews'),saves:num('pSaves'),shares:num('pShares'),reach:num('pReach')});save()}
-function renderPosts(){let sel=document.getElementById('postAccount');if(sel){let old=sel.value;sel.innerHTML=db.accounts.map(a=>`<option value="${a.id}">${esc(a.name||a.username)}</option>`).join('');if(db.accounts.some(a=>a.id===old))sel.value=old}let n=db.posts.length,views=db.posts.reduce((s,p)=>s+p.views,0),likes=db.posts.reduce((s,p)=>s+p.likes,0);setHTML('postStats',`Публикаций в базе: <b>${n}</b> · Просмотры: <b>${fmt(views)}</b> · Лайки: <b>${fmt(likes)}</b>`);setHTML('postsTable',n?'<div class="tablewrap"><table><tr><th>Публикация</th><th>Просмотры</th><th>Лайки</th><th>Сохранения</th></tr>'+db.posts.slice().reverse().map(p=>`<tr><td>${esc(p.title||'Без названия')}<br><span class="hint">${esc(p.date||'')}</span></td><td>${fmt(p.views)}</td><td>${fmt(p.likes)}</td><td>${fmt(p.saves)}</td></tr>`).join('')+'</table></div>':'<div class="empty">Пока нет данных о публикациях.</div>')}
-function exportJSON(){let blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='nexora-instagram-backup.json';a.click();URL.revokeObjectURL(a.href)}
-function importJSON(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let d=JSON.parse(r.result);if(!Array.isArray(d.accounts)||!Array.isArray(d.posts))throw 0;if(confirm('Заменить текущие данные резервной копией?')){db=d;save();alert('Данные восстановлены')}}catch(_){alert('Не удалось прочитать JSON-файл')}};r.readAsText(f)}
-function importCSV(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let lines=r.result.split(/\r?\n/).filter(Boolean),heads=lines.shift().split(',').map(x=>x.trim());let count=0;lines.forEach(line=>{let v=line.split(',').map(x=>x.trim()),o={};heads.forEach((h,i)=>o[h]=v[i]||'');let a={id:String(Date.now()+count),name:o.name||o.username||'Аккаунт',username:(o.username||'').replace(/^@/,''),followers:+o.followers||0,following:+o.following||0,posts:+o.posts||0,likes:+o.likes||0,comments:+o.comments||0,views:+o.views||0,reach:+o.reach||0,saves:+o.saves||0,shares:+o.shares||0,category:o.category||'',notes:'Импорт CSV'};db.accounts.push(a);db.history.push({id:a.id,date:new Date().toISOString(),followers:a.followers});count++});save();alert('Импортировано аккаунтов: '+count)};r.readAsText(f)}
-function set(id,v){let e=document.getElementById(id);if(e)e.textContent=v}function setHTML(id,v){let e=document.getElementById(id);if(e)e.innerHTML=v}
+function er(a){return a.followers?((Number(a.likes||0)+Number(a.comments||0))/a.followers*100):0}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-const API_BASE = "https://nexora-instagram-analyzer.onrender.com";
+function set(id,v){const e=document.getElementById(id);if(e)e.textContent=v}
+function setHTML(id,v){const e=document.getElementById(id);if(e)e.innerHTML=v}
 
-function addPublicAnalyzer() {
-  const section = document.getElementById("overview");
-  const card = document.createElement("div");
-  card.className = "card";
-  card.innerHTML = `
-    <h2>Автоматический анализ Instagram</h2>
-    <input id="publicUsername" placeholder="@username">
-    <button class="btn primary" onclick="analyzePublicAccount()">
-      Анализировать аккаунт
-    </button>
-    <div id="publicResult" class="hint"></div>
-  `;
-  section.appendChild(card);
+document.querySelectorAll('nav button').forEach(b=>{
+ b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x===b));
+  document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===b.dataset.page));
+  renderAll();
+ };
+});
+
+function showMessage(text,error=false){
+ const box=document.getElementById('message');
+ box.hidden=false;
+ box.className='status'+(error?' error':'');
+ box.textContent=text;
+}
+function normalizeInput(value){
+ return value.trim().replace(/^@/,'');
 }
 
-async function analyzePublicAccount() {
-  const username = document.getElementById("publicUsername").value
-    .trim().replace(/^@/, "");
-  const result = document.getElementById("publicResult");
-
-  if (!username) {
-    result.textContent = "Введите Instagram username";
-    return;
+async function analyze(){
+ const input=document.getElementById('username').value.trim();
+ if(!input){showMessage('Введите username или ссылку на Instagram.',true);return}
+ const btn=document.getElementById('analyzeBtn');
+ btn.disabled=true;
+ btn.textContent='Идёт анализ…';
+ document.getElementById('result').hidden=true;
+ showMessage('Отправляем запрос серверу. Получение данных может занять некоторое время.');
+ try{
+  const response=await fetch(API+'/api/analyze',{
+   method:'POST',
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({username:normalizeInput(input)})
+  });
+  let data={};
+  try{data=await response.json()}catch(e){}
+  if(!response.ok){
+   const detail=typeof data.detail==='string'?data.detail:'Сервер не смог получить данные Instagram.';
+   throw new Error(detail);
   }
-
-  result.textContent = "Отправляем запрос на сервер...";
-
-  try {
-    const response = await fetch(API_BASE + "/api/analyze", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username })
-    });
-
-    const data = await response.json();
-    result.textContent = data.message || "Ответ получен";
-  } catch (error) {
-    result.textContent = "Ошибка соединения с сервером";
-  }
+  if(data.status!=='ok'||!data.account)throw new Error('Сервер вернул неполный ответ.');
+  current=data;
+  renderResult(data);
+  showMessage('Анализ завершён. Полученные данные можно сохранить в базу.');
+ }catch(err){
+  showMessage('Не удалось выполнить анализ: '+(err.message||'ошибка соединения')+'. Instagram может временно ограничивать запросы. Попробуйте позже.',true);
+ }finally{
+  btn.disabled=false;
+  btn.textContent='Анализировать';
+ }
 }
 
-addPublicAnalyzer();
+function renderResult(data){
+ const a=data.account;
+ document.getElementById('result').hidden=false;
+ set('profileName',(a.full_name||a.username)+' · @'+a.username);
+ set('profileBio',a.biography||'Описание профиля не указано.');
+ const link=document.getElementById('profileLink');
+ link.href=a.profile_url;
+ set('rFollowers',fmt(a.followers));
+ set('rFollowing',fmt(a.following));
+ set('rCount',fmt(a.post_count));
+ set('rEr',a.engagement_rate+'%');
+ set('rLikes',fmt(a.avg_likes));
+ set('rComments',fmt(a.avg_comments));
+ set('rSample',fmt(a.sampled_posts));
+ set('rTime',fmt(data.elapsed_seconds)+' сек.');
+ set('notice',data.notice||'');
+ const posts=data.posts||[];
+ setHTML('recentPosts',posts.length?posts.map(p=>`
+ <div class="post">
+ <div><span class="pill">${esc(p.type||'Публикация')}</span> ${esc(p.date?new Date(p.date).toLocaleDateString('ru-RU'):'')}</div>
+ <p>${esc(p.caption||'Без описания')}</p>
+ <div class="hint">♥ ${fmt(p.likes)} · Комментарии: ${fmt(p.comments)} · Просмотры: ${p.views==null?'нет данных':fmt(p.views)}</div>
+ <a href="${esc(p.url)}" target="_blank" rel="noopener">Открыть публикацию</a>
+ </div>`).join(''):'<div class="empty">Публикации не получены.</div>');
+}
+
+function saveCurrent(){
+ if(!current)return;
+ const a=current.account;
+ const item={
+  id:'ig_'+a.username,
+  name:a.full_name||a.username,
+  username:a.username,
+  followers:a.followers,
+  following:a.following,
+  posts:a.post_count,
+  likes:a.avg_likes,
+  comments:a.avg_comments,
+  views:0,reach:0,saves:0,shares:0,
+  category:'',
+  notes:'Автоматический публичный анализ',
+  updated:current.checked_at
+ };
+ const index=db.accounts.findIndex(x=>x.username===item.username);
+ if(index>=0)db.accounts[index]=item;
+ else db.accounts.push(item);
+ (current.posts||[]).forEach(p=>{
+  const exists=db.posts.some(x=>x.url===p.url);
+  if(!exists)db.posts.push({
+   id:p.shortcode,
+   accountId:item.id,
+   username:item.username,
+   title:p.caption||p.shortcode,
+   url:p.url,
+   date:p.date,
+   likes:p.likes,
+   comments:p.comments,
+   views:p.views||0,
+   saves:0,shares:0,reach:0
+  });
+ });
+ db.history.push({id:item.id,date:current.checked_at,followers:item.followers});
+ saveDB();
+ showMessage('Аккаунт @'+a.username+' сохранён. Публикации добавлены в базу.');
+}
+
+function renderAccounts(){
+ const q=(document.getElementById('searchAccount')?.value||'').toLowerCase();
+ const list=db.accounts.filter(a=>(a.name+' '+a.username+' '+(a.category||'')).toLowerCase().includes(q));
+ setHTML('accountsTable',list.length?'<div class="tablewrap"><table><tr><th>Аккаунт</th><th>Подписчики</th><th>ER</th><th>Обновлён</th></tr>'+
+ list.map(a=>`<tr><td><b>${esc(a.name||a.username)}</b><br><span class="hint">@${esc(a.username||'')}</span></td><td>${fmt(a.followers)}</td><td>${er(a).toFixed(2)}%</td><td>${a.updated?new Date(a.updated).toLocaleDateString('ru-RU'):'—'}</td></tr>`).join('')+'</table></div>':'<div class="empty">Пока нет сохранённых аккаунтов. Выполните анализ и нажмите «Сохранить аккаунт».</div>');
+}
+
+function renderCompare(){
+ const arr=db.accounts;
+ setHTML('compareTable',arr.length?'<div class="tablewrap"><table><tr><th>Показатель</th>'+arr.map(a=>'<th>'+esc(a.name||a.username)+'</th>').join('')+'</tr>'+
+ [['Подписчики','followers'],['Подписки','following'],['Публикации','posts'],['Средние лайки','likes'],['Комментарии','comments']].map(([label,key])=>'<tr><td>'+label+'</td>'+arr.map(a=>'<td>'+fmt(a[key])+'</td>').join('')+'</tr>').join('')+
+ '<tr><td>ER</td>'+arr.map(a=>'<td>'+er(a).toFixed(2)+'%</td>').join('')+'</tr></table></div>':'<div class="empty">Сначала сохраните аккаунты через автоматический анализ.</div>');
+}
+
+function renderPosts(){
+ setHTML('postsTable',db.posts.length?'<div class="tablewrap"><table><tr><th>Аккаунт / публикация</th><th>Лайки</th><th>Комментарии</th><th>Просмотры</th></tr>'+
+ db.posts.slice().reverse().map(p=>`<tr><td><b>@${esc(p.username||'')}</b><br>${p.url?'<a href="'+esc(p.url)+'" target="_blank" rel="noopener">Открыть публикацию</a>':esc(p.title||'Публикация')}<br><span class="hint">${p.date?new Date(p.date).toLocaleDateString('ru-RU'):''}</span></td><td>${fmt(p.likes)}</td><td>${fmt(p.comments)}</td><td>${fmt(p.views)}</td></tr>`).join('')+'</table></div>':'<div class="empty">Публикации появятся после сохранения результатов анализа.</div>');
+}
+
+function renderAll(){
+ const total=db.accounts.reduce((s,a)=>s+Number(a.followers||0),0);
+ const avg=db.accounts.length?db.accounts.reduce((s,a)=>s+er(a),0)/db.accounts.length:0;
+ set('kAccounts',fmt(db.accounts.length));
+ set('kFollowers',fmt(total));
+ set('kEr',avg.toFixed(2)+'%');
+ set('kPosts',fmt(db.posts.length));
+ renderAccounts();
+ renderCompare();
+ renderPosts();
+}
+
+function exportJSON(){
+ const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+ download(blob,'nexora-instagram-backup.json');
+}
+function exportCSV(){
+ const heads=['name','username','followers','following','posts','likes','comments','views','category'];
+ const rows=db.accounts.map(a=>heads.map(k=>'"'+String(a[k]??'').replace(/"/g,'""')+'"').join(','));
+ download(new Blob(['\uFEFF'+heads.join(',')+'\n'+rows.join('\n')],{type:'text/csv;charset=utf-8'}),'nexora-accounts.csv');
+}
+function download(blob,name){
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');
+ a.href=url;a.download=name;a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function importJSON(event){
+ const file=event.target.files[0];
+ if(!file)return;
+ const reader=new FileReader();
+ reader.onload=()=>{
+  try{
+   const d=JSON.parse(reader.result);
+   if(!Array.isArray(d.accounts)||!Array.isArray(d.posts))throw new Error();
+   if(confirm('Заменить текущую базу данными из резервной копии?')){
+    db={accounts:d.accounts,posts:d.posts,history:Array.isArray(d.history)?d.history:[]};
+    saveDB();alert('Резервная копия восстановлена.');
+   }
+  }catch(e){alert('Не удалось прочитать JSON-файл.')}
+ };
+ reader.readAsText(file);
+ event.target.value='';
+}
+
 renderAll();
 </script>
-</body></html>
+</body>
+</html>
