@@ -12,6 +12,7 @@ from urllib.request import Request, urlopen
 import asyncio
 import instaloader
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from urllib.parse import urlparse
@@ -346,7 +347,9 @@ def collect_profile(username: str) -> dict:
 
 @app.get("/")
 def root():
-    return {"service": "NEXORA Instagram Analyzer API", "status": "ok"}
+    # Serve the browser app at the Render root URL; API endpoints remain unchanged.
+    index_path = os.path.join(os.path.dirname(__file__), "index.html")
+    return FileResponse(index_path, media_type="text/html")
 
 @app.get("/health")
 def health():
