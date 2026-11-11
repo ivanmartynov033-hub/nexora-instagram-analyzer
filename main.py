@@ -359,6 +359,7 @@ def api_health():
 
 @app.post("/api/analyze")
 async def analyze(request: AnalyzeRequest):
+    # Public mode intentionally uses Instaloader only; Firecrawl fallback is disabled.
     try:
         username = clean_username(request.username)
     except ValueError as exc:
