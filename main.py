@@ -364,12 +364,11 @@ async def analyze(request: AnalyzeRequest):
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
+    started = time.monotonic()
     cached = _cache_get(username)
     if cached is not None:
-        cached["cache"] = "hit"
+        cached["elapsed_seconds"] = round(time.monotonic() - started, 2)
         return cached
-
-    started = time.monotonic()
     try:
         try:
             result = await asyncio.to_thread(collect_profile, username)
@@ -407,7 +406,6 @@ async def analyze(request: AnalyzeRequest):
                 raise HTTPException(status_code=502, detail="Не удалось получить данные ни через Instagram, ни через резервный источник Firecrawl.")
 
         result["elapsed_seconds"] = round(time.monotonic() - started, 2)
-        result["cache"] = "miss"
         _cache_set(username, result)
         return result
     except HTTPException:
