@@ -1,7 +1,71 @@
+from collections import OrderedDict
+from copy import deepcopy
 from datetime import timezone
+from threading import RLock
 import json
 import os
+import re
+import time
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
+
+import asyncio
+import instaloader
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
+from urllib.parse import urlparse
+
+class FirecrawlAuthError(Exception):
+    """Firecrawl rejected the API key or request permissions."""
+
+CACHE_TTL_SECONDS = 600
+CACHE_MAX_ENTRIES = 200
+_profile_cache = OrderedDict()
+_cache_lock = RLock()
+
+def _cache_get(username: str):
+    key = username.lower()
+    now = time.monotonic()
+    with _cache_lock:
+        expired = [item for item, value in _profile_cache.items() if now - value["stored_at"] >= CACHE_TTL_SECONDS]
+        for item in expired:
+            _profile_cache.pop(item, None)
+        entry = _profile_cache.get(key)
+        if entry is None:
+            return None
+        _profile_cache.move_to_end(key)
+        return deepcopy(entry["result"])
+
+def _cache_set(username: str, result: dict):
+    key = username.lower()
+    now = time.monotonic()
+    with _cache_lock:
+        expired = [item for item, value in _profile_cache.items() if now - value["stored_at"] >= CACHE_TTL_SECONDS]
+        for item in expired:
+            _profile_cache.pop(item, None)
+        _profile_cache[key] = {"stored_at": now, "result": deepcopy(result)}
+        _profile_cache.move_to_end(key)
+        while len(_profile_cache) > CACHE_MAX_ENTRIES:
+            _profile_cache.popitem(last=False)
+
+def _is_instagram_rate_limit(exc: Exception) -> bool:
+    status = getattr(exc, "status_code", None) or getattr(exc, "code", None)
+    message = str(exc).lower()
+    return status == 429 or "429" in message or "too many requests" in message or "rate limit" in message
+
+def make_loader():
+    return instaloader.Instaloader(
+        quiet=True,
+        download_pictures=False,
+        download_videos=False,
+        download_video_thumbnails=False,
+        download_geotags=False,
+        download_comments=False,
+        save_metadata=False,
+        compress_json=False,
+        max_connection_attempts=1,
+    )
 
 def collect_profile_firecrawl_scrape(username: str) -> dict:
     """Fallback to a live Firecrawl scrape when Oriane has no indexed profile."""
@@ -51,8 +115,13 @@ def collect_profile_firecrawl_scrape(username: str) -> dict:
         headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
         method="POST",
     )
-    with urlopen(req, timeout=60) as response:
-        body = json.loads(response.read().decode("utf-8"))
+    try:
+        with urlopen(req, timeout=60) as response:
+            body = json.loads(response.read().decode("utf-8"))
+    except HTTPError as exc:
+        if exc.code in (401, 403):
+            raise FirecrawlAuthError(f"Firecrawl вернул HTTP {exc.code}: проверьте API-ключ и права доступа.") from exc
+        raise
 
     data = body.get("data") or {}
     extracted = data.get("json") or body.get("json") or {}
@@ -137,8 +206,13 @@ def collect_profile_firecrawl(username: str) -> dict:
         method="POST",
     )
     try:
-        with urlopen(req, timeout=35) as response:
-            body = json.loads(response.read().decode("utf-8"))
+        try:
+            with urlopen(req, timeout=35) as response:
+                body = json.loads(response.read().decode("utf-8"))
+        except HTTPError as exc:
+            if exc.code in (401, 403):
+                raise FirecrawlAuthError(f"Firecrawl вернул HTTP {exc.code}: проверьте API-ключ и права доступа.") from exc
+            raise
         alexandria = (body.get("data") or {}).get("alexandria") or []
         if isinstance(alexandria, dict):
             alexandria = [alexandria]
@@ -178,7 +252,7 @@ def collect_profile_firecrawl(username: str) -> dict:
                 },
                 "posts": [],
             }
-    except PermissionError:
+    except (PermissionError, FirecrawlAuthError):
         raise
     except Exception:
         # A provider miss/error should not prevent trying the ordinary page scrape.
@@ -186,16 +260,6 @@ def collect_profile_firecrawl(username: str) -> dict:
 
     return collect_profile_firecrawl_scrape(username)
 
-
-from urllib.parse import urlparse
-import asyncio
-import re
-import time
-
-import instaloader
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
 
 app = FastAPI(title="NEXORA Instagram Analyzer API", version="0.1.0")
 
@@ -226,16 +290,7 @@ def clean_username(value: str) -> str:
     return value
 
 def collect_profile(username: str) -> dict:
-    loader = instaloader.Instaloader(
-        quiet=True,
-        download_pictures=False,
-        download_videos=False,
-        download_video_thumbnails=False,
-        download_geotags=False,
-        download_comments=False,
-        save_metadata=False,
-        compress_json=False,
-    )
+    loader = make_loader()
     profile = instaloader.Profile.from_username(loader.context, username)
 
     posts = []
@@ -297,6 +352,11 @@ def root():
 def health():
     return {"status": "ok"}
 
+@app.get("/api/health")
+def api_health():
+    return {"status": "ok", "service": "NEXORA Instagram Analyzer API"}
+
+
 @app.post("/api/analyze")
 async def analyze(request: AnalyzeRequest):
     try:
@@ -304,35 +364,51 @@ async def analyze(request: AnalyzeRequest):
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
+    cached = _cache_get(username)
+    if cached is not None:
+        cached["cache"] = "hit"
+        return cached
+
     started = time.monotonic()
     try:
-        result = await asyncio.to_thread(collect_profile, username)
-        result["data_source"] = "instaloader"
+        try:
+            result = await asyncio.to_thread(collect_profile, username)
+            result["data_source"] = "instaloader"
+        except instaloader.exceptions.ProfileNotExistsException:
+            raise HTTPException(status_code=404, detail="Публичный профиль не найден.")
+        except instaloader.exceptions.PrivateProfileNotFollowedException:
+            raise HTTPException(status_code=403, detail="Профиль закрытый. Доступны только публичные профили.")
+        except instaloader.exceptions.InstaloaderException as instagram_exc:
+            rate_limited = _is_instagram_rate_limit(instagram_exc)
+            try:
+                result = await asyncio.to_thread(collect_profile_firecrawl, username)
+            except FirecrawlAuthError as firecrawl_exc:
+                raise HTTPException(status_code=502, detail=str(firecrawl_exc))
+            except PermissionError as fallback_exc:
+                raise HTTPException(status_code=403, detail=str(fallback_exc))
+            except LookupError:
+                if rate_limited:
+                    raise HTTPException(status_code=429, detail="Instagram временно ограничил запросы (429), а резервный источник не нашёл публичные данные. Попробуйте позже.")
+                raise HTTPException(status_code=404, detail="Профиль не найден в публичных данных Instagram и индексе Firecrawl.")
+            except Exception:
+                if rate_limited:
+                    raise HTTPException(status_code=429, detail="Instagram временно ограничил запросы (429). Резервный источник Firecrawl также временно недоступен.")
+                raise HTTPException(status_code=502, detail=f"Instagram не смог вернуть профиль, а резервный источник Firecrawl недоступен. Исходная ошибка: {str(instagram_exc)[:160]}")
+        except Exception:
+            try:
+                result = await asyncio.to_thread(collect_profile_firecrawl, username)
+            except FirecrawlAuthError as firecrawl_exc:
+                raise HTTPException(status_code=502, detail=str(firecrawl_exc))
+            except PermissionError as fallback_exc:
+                raise HTTPException(status_code=403, detail=str(fallback_exc))
+            except LookupError:
+                raise HTTPException(status_code=404, detail="Профиль не найден в публичных данных Instagram и индексе Firecrawl.")
+            except Exception:
+                raise HTTPException(status_code=502, detail="Не удалось получить данные ни через Instagram, ни через резервный источник Firecrawl.")
+
         result["elapsed_seconds"] = round(time.monotonic() - started, 2)
+        result["cache"] = "miss"
+        _cache_set(username, result)
         return result
-    except instaloader.exceptions.ProfileNotExistsException:
-        raise HTTPException(status_code=404, detail="Публичный профиль не найден.")
-    except instaloader.exceptions.PrivateProfileNotFollowedException:
-        raise HTTPException(status_code=403, detail="Профиль закрытый. Доступны только публичные профили.")
-    except instaloader.exceptions.InstaloaderException as exc:
-        try:
-            result = await asyncio.to_thread(collect_profile_firecrawl, username)
-            result["elapsed_seconds"] = round(time.monotonic() - started, 2)
-            return result
-        except PermissionError as fallback_exc:
-            raise HTTPException(status_code=403, detail=str(fallback_exc))
-        except LookupError:
-            raise HTTPException(status_code=404, detail="Профиль не найден в публичных данных Instagram и индексе Firecrawl.")
-        except Exception:
-            raise HTTPException(status_code=502, detail=f"Instagram ограничил запрос, а резервный источник Firecrawl не смог вернуть профиль. Исходная ошибка: {str(exc)[:160]}")
-    except Exception:
-        try:
-            result = await asyncio.to_thread(collect_profile_firecrawl, username)
-            result["elapsed_seconds"] = round(time.monotonic() - started, 2)
-            return result
-        except PermissionError as fallback_exc:
-            raise HTTPException(status_code=403, detail=str(fallback_exc))
-        except LookupError:
-            raise HTTPException(status_code=404, detail="Профиль не найден в публичных данных Instagram и индексе Firecrawl.")
-        except Exception:
-            raise HTTPException(status_code=502, detail="Не удалось получить данные ни через Instagram, ни через резервный источник Firecrawl.")
+    except HTTPException:
+        raise
