@@ -1,0 +1,82 @@
+name: Validate root main.py
+
+on:
+  push:
+    branches:
+      - fix/root-main-hardening-2026-11-11
+    paths:
+      - main.py
+      - requirements.txt
+      - .github/workflows/validate-root-main.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt httpx
+
+      - name: Compile backend
+        run: python -m py_compile main.py
+
+      - name: Run isolated API and cache smoke tests
+        run: |
+          python - <<'PY'
+          from fastapi.testclient import TestClient
+          import main
+
+          client = TestClient(main.app)
+
+          health = client.get("/api/health")
+          assert health.status_code == 200, health.text
+          assert health.json()["status"] == "ok"
+
+          invalid = client.post("/api/analyze", json={"username": "https://example.com/not-instagram"})
+          assert invalid.status_code == 400, invalid.text
+
+          calls = {"count": 0}
+          def fake_collect(username):
+              calls["count"] += 1
+              return {
+                  "status": "ok",
+                  "checked_at": "2026-01-01T00:00:00Z",
+                  "elapsed_seconds": 0,
+                  "notice": "isolated test",
+                  "account": {"username": username, "followers": 10},
+                  "posts": [],
+              }
+
+          main._profile_cache.clear()
+          main.collect_profile = fake_collect
+
+          first = client.post("/api/analyze", json={"username": "@Example"})
+          second = client.post("/api/analyze", json={"username": "example"})
+          assert first.status_code == 200, first.text
+          assert second.status_code == 200, second.text
+          assert calls["count"] == 1, calls
+          assert first.json()["data_source"] == "instaloader"
+          assert "cache" not in first.json()
+          assert "cache" not in second.json()
+
+          # Cache values are copied so callers cannot mutate stored data.
+          cached = main._cache_get("EXAMPLE")
+          cached["account"]["followers"] = -1
+          assert main._cache_get("example")["account"]["followers"] == 10
+
+          print("PASS: import, compile, health endpoint, input validation, API response, cache hit and cache isolation")
+          PY
