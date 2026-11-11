@@ -369,6 +369,7 @@ async def analyze(request: AnalyzeRequest):
     if cached is not None:
         cached["elapsed_seconds"] = round(time.monotonic() - started, 2)
         return cached
+
     try:
         try:
             result = await asyncio.to_thread(collect_profile, username)
@@ -378,32 +379,20 @@ async def analyze(request: AnalyzeRequest):
         except instaloader.exceptions.PrivateProfileNotFollowedException:
             raise HTTPException(status_code=403, detail="Профиль закрытый. Доступны только публичные профили.")
         except instaloader.exceptions.InstaloaderException as instagram_exc:
-            rate_limited = _is_instagram_rate_limit(instagram_exc)
-            try:
-                result = await asyncio.to_thread(collect_profile_firecrawl, username)
-            except FirecrawlAuthError as firecrawl_exc:
-                raise HTTPException(status_code=502, detail=str(firecrawl_exc))
-            except PermissionError as fallback_exc:
-                raise HTTPException(status_code=403, detail=str(fallback_exc))
-            except LookupError:
-                if rate_limited:
-                    raise HTTPException(status_code=429, detail="Instagram временно ограничил запросы (429), а резервный источник не нашёл публичные данные. Попробуйте позже.")
-                raise HTTPException(status_code=404, detail="Профиль не найден в публичных данных Instagram и индексе Firecrawl.")
-            except Exception:
-                if rate_limited:
-                    raise HTTPException(status_code=429, detail="Instagram временно ограничил запросы (429). Резервный источник Firecrawl также временно недоступен.")
-                raise HTTPException(status_code=502, detail=f"Instagram не смог вернуть профиль, а резервный источник Firecrawl недоступен. Исходная ошибка: {str(instagram_exc)[:160]}")
-        except Exception:
-            try:
-                result = await asyncio.to_thread(collect_profile_firecrawl, username)
-            except FirecrawlAuthError as firecrawl_exc:
-                raise HTTPException(status_code=502, detail=str(firecrawl_exc))
-            except PermissionError as fallback_exc:
-                raise HTTPException(status_code=403, detail=str(fallback_exc))
-            except LookupError:
-                raise HTTPException(status_code=404, detail="Профиль не найден в публичных данных Instagram и индексе Firecrawl.")
-            except Exception:
-                raise HTTPException(status_code=502, detail="Не удалось получить данные ни через Instagram, ни через резервный источник Firecrawl.")
+            if _is_instagram_rate_limit(instagram_exc):
+                raise HTTPException(
+                    status_code=429,
+                    detail="Instagram временно ограничил автоматические запросы (429). Резервный сбор отключён. Попробуйте позже.",
+                )
+            raise HTTPException(
+                status_code=502,
+                detail=f"Не удалось получить публичные данные Instagram: {str(instagram_exc)[:200]}",
+            )
+        except Exception as instagram_exc:
+            raise HTTPException(
+                status_code=502,
+                detail=f"Ошибка при получении данных Instagram: {str(instagram_exc)[:200]}",
+            )
 
         result["elapsed_seconds"] = round(time.monotonic() - started, 2)
         _cache_set(username, result)
