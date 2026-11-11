@@ -17,7 +17,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r requirements.txt httpx
       - name: Compile backend
         run: python -m py_compile main.py
       - name: Verify Firecrawl is not called
