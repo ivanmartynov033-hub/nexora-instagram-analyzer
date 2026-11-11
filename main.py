@@ -1,4 +1,72 @@
 from datetime import timezone
+import json
+import os
+from urllib.request import Request, urlopen
+
+def collect_profile_firecrawl(username: str) -> dict:
+    api_key = os.getenv("FIRECRAWL_API_KEY")
+    if not api_key:
+        raise RuntimeError("FIRECRAWL_API_KEY is not configured")
+
+    payload = {
+        "alexandria": {
+            "provider": "oriane",
+            "capability": "instagram/profile-lookup",
+            "options": {
+                "url": f"https://www.instagram.com/{username}/",
+                "projection": "basic"
+            }
+        }
+    }
+    req = Request(
+        "https://api.firecrawl.dev/v2/scrape",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        method="POST",
+    )
+    with urlopen(req, timeout=35) as response:
+        body = json.loads(response.read().decode("utf-8"))
+
+    alexandria = (body.get("data") or {}).get("alexandria") or []
+    if isinstance(alexandria, dict):
+        alexandria = [alexandria]
+    if not alexandria:
+        raise RuntimeError("Firecrawl returned no Alexandria result")
+    result = alexandria[0]
+    if result.get("error"):
+        raise RuntimeError("Firecrawl profile lookup failed")
+    result_data = result.get("data") or {}
+    records = result_data.get("results") or result.get("records") or []
+    if not records:
+        raise LookupError("Профиль не найден в индексе Firecrawl.")
+    profile = records[0]
+    handle = profile.get("handle") or username
+    if profile.get("isPrivate") is True:
+        raise PermissionError("Профиль закрытый. Доступны только публичные профили.")
+
+    return {
+        "status": "ok",
+        "checked_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "elapsed_seconds": 0,
+        "data_source": "firecrawl_index",
+        "notice": "Данные получены из индексированного каталога Firecrawl, а не в реальном времени. Показатели могут отличаться от текущих. Данные публикаций этим источником не предоставлены, поэтому ER и средние показатели не рассчитаны.",
+        "account": {
+            "username": handle,
+            "full_name": profile.get("displayName") or "",
+            "biography": profile.get("bio") or "",
+            "followers": int(profile.get("followersCount") or 0),
+            "following": int(profile.get("followingCount") or 0),
+            "post_count": int(profile.get("postsCount") or 0),
+            "engagement_rate": 0,
+            "avg_likes": 0,
+            "avg_comments": 0,
+            "sampled_posts": 0,
+            "profile_url": profile.get("profileUrl") or f"https://www.instagram.com/{handle}/",
+        },
+        "posts": [],
+    }
+
+
 from urllib.parse import urlparse
 import asyncio
 import re
@@ -119,6 +187,7 @@ async def analyze(request: AnalyzeRequest):
     started = time.monotonic()
     try:
         result = await asyncio.to_thread(collect_profile, username)
+        result["data_source"] = "instaloader"
         result["elapsed_seconds"] = round(time.monotonic() - started, 2)
         return result
     except instaloader.exceptions.ProfileNotExistsException:
@@ -126,6 +195,24 @@ async def analyze(request: AnalyzeRequest):
     except instaloader.exceptions.PrivateProfileNotFollowedException:
         raise HTTPException(status_code=403, detail="Профиль закрытый. Доступны только публичные профили.")
     except instaloader.exceptions.InstaloaderException as exc:
-        raise HTTPException(status_code=502, detail=f"Instagram не предоставил данные: {str(exc)[:240]}")
+        try:
+            result = await asyncio.to_thread(collect_profile_firecrawl, username)
+            result["elapsed_seconds"] = round(time.monotonic() - started, 2)
+            return result
+        except PermissionError as fallback_exc:
+            raise HTTPException(status_code=403, detail=str(fallback_exc))
+        except LookupError:
+            raise HTTPException(status_code=404, detail="Профиль не найден в публичных данных Instagram и индексе Firecrawl.")
+        except Exception:
+            raise HTTPException(status_code=502, detail=f"Instagram ограничил запрос, а резервный источник Firecrawl не смог вернуть профиль. Исходная ошибка: {str(exc)[:160]}")
     except Exception:
-        raise HTTPException(status_code=502, detail="Не удалось получить публичные данные Instagram. Возможно, Instagram временно ограничил запросы.")
+        try:
+            result = await asyncio.to_thread(collect_profile_firecrawl, username)
+            result["elapsed_seconds"] = round(time.monotonic() - started, 2)
+            return result
+        except PermissionError as fallback_exc:
+            raise HTTPException(status_code=403, detail=str(fallback_exc))
+        except LookupError:
+            raise HTTPException(status_code=404, detail="Профиль не найден в публичных данных Instagram и индексе Firecrawl.")
+        except Exception:
+            raise HTTPException(status_code=502, detail="Не удалось получить данные ни через Instagram, ни через резервный источник Firecrawl.")
