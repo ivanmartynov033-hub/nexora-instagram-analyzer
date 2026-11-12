@@ -202,7 +202,10 @@ async function analyze(){
   renderResult(data);
   showMessage('Анализ завершён. Полученные данные можно сохранить в базу.');
  }catch(err){
-  showMessage('Не удалось выполнить анализ: '+(err.message||'ошибка соединения')+'. Instagram может временно ограничивать запросы. Попробуйте позже.',true);
+  const message=err.message||'ошибка соединения';
+  showMessage(message.includes('ограничил')||message.includes('(429)')
+   ? message+' Не повторяйте запросы подряд: это может продлить ограничение.'
+   : 'Не удалось выполнить анализ: '+message,true);
  }finally{
   btn.disabled=false;
   btn.textContent='Анализировать';
