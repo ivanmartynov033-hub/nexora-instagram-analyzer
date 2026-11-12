@@ -362,7 +362,7 @@ def api_health():
 
 @app.post("/api/analyze")
 async def analyze(request: AnalyzeRequest):
-    # Public mode intentionally uses Instaloader only; Firecrawl fallback is disabled.
+    # Public mode uses Instaloader first and Firecrawl only as a fallback for Instagram rate limits (429).
     try:
         username = clean_username(request.username)
     except ValueError as exc:
@@ -384,10 +384,25 @@ async def analyze(request: AnalyzeRequest):
             raise HTTPException(status_code=403, detail="Профиль закрытый. Доступны только публичные профили.")
         except instaloader.exceptions.InstaloaderException as instagram_exc:
             if _is_instagram_rate_limit(instagram_exc):
-                raise HTTPException(
-                    status_code=429,
-                    detail="Instagram временно ограничил автоматические запросы (429). Резервный сбор отключён. Попробуйте позже.",
-                )
+                # Instagram rate-limited the primary source: try Firecrawl as a fallback only.
+                try:
+                    result = await asyncio.to_thread(collect_profile_firecrawl, username)
+                    result["elapsed_seconds"] = round(time.monotonic() - started, 2)
+                    result["fallback_reason"] = "instagram_rate_limit"
+                    _cache_set(username, result)
+                    return result
+                except PermissionError as firecrawl_exc:
+                    raise HTTPException(status_code=403, detail=str(firecrawl_exc))
+                except FirecrawlAuthError as firecrawl_exc:
+                    raise HTTPException(
+                        status_code=502,
+                        detail=f"Instagram ограничил запросы, а Firecrawl отклонил авторизацию: {str(firecrawl_exc)[:200]}",
+                    )
+                except Exception as firecrawl_exc:
+                    raise HTTPException(
+                        status_code=502,
+                        detail=f"Instagram ограничил запросы (429); резервный сбор Firecrawl не удался: {str(firecrawl_exc)[:200]}",
+                    )
             raise HTTPException(
                 status_code=502,
                 detail=f"Не удалось получить публичные данные Instagram: {str(instagram_exc)[:200]}",
